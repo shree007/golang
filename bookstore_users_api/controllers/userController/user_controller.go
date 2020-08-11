@@ -1,4 +1,4 @@
-package user_controller
+package userController
 
 import (
 	"fmt"

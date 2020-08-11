@@ -1,7 +1,7 @@
 package users
 
 import (
-	"bookstore_users_api/datasources/msql/users_db"
+	"bookstore_users_api/datasources/msql/usersDb"
 	"bookstore_users_api/utils/errors"
 	"fmt"
 )
@@ -16,7 +16,7 @@ const (
 
 func (user *User) Get() *errors.RestErr {
 
-	if err := users_db.Client.Ping(); err != nil {
+	if err := usersDb.Client.Ping(); err != nil {
 
 		panic(err)
 	}
@@ -36,7 +36,7 @@ func (user *User) Get() *errors.RestErr {
 }
 
 func (user *User) Save() *errors.RestErr {
-	stmt, err := users_db.Client.Prepare(queryInsertUser)
+	stmt, err := usersDb.Client.Prepare(queryInsertUser)
 	if err != nil {
 		panic(err.Error())
 	}
