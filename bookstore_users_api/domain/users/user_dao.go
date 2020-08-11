@@ -15,7 +15,6 @@ const (
 )
 
 func (user *User) Get() *errors.RestErr {
-
 	if err := usersDb.Client.Ping(); err != nil {
 
 		panic(err)
@@ -25,6 +24,7 @@ func (user *User) Get() *errors.RestErr {
 	if result == nil {
 		return errors.NewNotFoundError(fmt.Sprintf("User %d not found", user.Id))
 	}
+	//These line will be removed when db will be integrated
 	user.Id = result.Id
 	user.FirstName = result.FirstName
 	user.LastName = result.LastName
@@ -37,9 +37,7 @@ func (user *User) Get() *errors.RestErr {
 
 func (user *User) Save() *errors.RestErr {
 	stmt, err := usersDb.Client.Prepare(queryInsertUser)
-	if err != nil {
-		panic(err.Error())
-	}
+
 	if err != nil {
 		return errors.NewInternalError(err.Error())
 	}
