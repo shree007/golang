@@ -54,10 +54,37 @@ func slices(){
 
 }
 
+// learn maps
+
+func maps(){
+
+	m := make(map[string]int)
+	m["k1"] = 1
+	m["k2"] = 2
+
+	fmt.Println(m)
+
+	fmt.Println(m["k1"])
+	fmt.Println(m["k3"])
+	fmt.Println(len(m))
+	delete(m, "k2")
+	fmt.Println(m)
+
+	_, prs := m["k2"]
+	fmt.Println(prs)
+
+	n :=map[string]int{"k3":1, "k4": 7}
+	fmt.Println(n)
+
+}
+
 
 func main() {
     // learn slices
     slices()
+
+    // learn maps
+    maps()
 }
 
 
