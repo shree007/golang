@@ -1,13 +1,19 @@
 package main
 
 import (
-	"github.com/tidwall/gjson" // more info https://github.com/tidwall/gjson
 	"io/ioutil"
 	"log"
 	"os/exec"
 	"os"
 	"strings"
 	"fmt"
+	"context"
+	"archive/tar"
+	"bytes"
+	
+    "github.com/tidwall/gjson" // more info https://github.com/tidwall/gjson
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 )
 
 func getcurrentdir() string {
@@ -16,6 +22,70 @@ func getcurrentdir() string {
   stdout, err := cmd.Output()
   fmt.Println(err)
   return string(stdout)
+}
+
+func buildDockerImage(dockerPath string, alpine_version string){
+	tagName := "latest"
+	ctx := context.Background()
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		log.Fatal(err, " :unable to init client")
+	}
+
+	buf := new(bytes.Buffer)
+	tw  := tar.NewWriter(buf)
+	defer tw.close()
+
+   dockerFile := "Dockerfile"
+   dockerFileReader, err := os.Open(dockerPath)
+   if err != nil {
+   		log.Fatal(err, " : unable to open Dockerfile")
+   }
+   readDockerFile, err := ioutil.ReadAll(dockerFileReader)
+   if err != nil {
+   		log.Fatal(err, " :unable to read dockerfile")
+   }
+
+   tarHeader := &tar.Header{
+   	Name: dockerFile,
+   	Size: int64(len(dockerFile)),
+   }
+   err = tw.WriteHeader(tarHeader)
+   if err != nil {
+   		log.Fatal(err, " :unable to write tar header")
+   }
+
+   _, err = tw.Write(readDockerFile)
+   if err != nil{
+   		log.Fatal(err, " :unable to write tar body")
+   }
+   dockerFileTarReader := bytes.NewReader(buf.Bytes())
+
+   // add any build args
+   buildArgs := make(map[string]*string)
+   buildArgs["ALPINE_VERSION"] =  alpine_version
+
+   imageBuildResponse, err := cli.ImageBuild(
+   	ctx,
+   	dockerFileTarReader.
+   	types.ImageBuildOptions{
+   		Context: dockerFileTarReader,
+   		Dockerfile: dockerFile,
+   		Tags: []string{tagName},
+   		NoCache: true,
+   		Remove: true,
+   		BuildArgs: buildArgs,
+   	})
+   	if err != nil {
+   		log.Fatal(err, " : unable to build docker image")
+   	}
+   	defer imageBuildResponse.Body.Close()
+   	_, err = io.Copy(os.stdout, imageBuildResponse.Body)
+
+   	if err != nil {
+   		log.Fatal(err, " : unable to read image build response")
+   	}
+
 }
 
 
@@ -31,18 +101,10 @@ func infrautility(utility_name string){
     alpine_version := gjson.Get(string(content),"utilites.alpine_version")
     log.Printf("%s\n",alpine_version)
     
-    command_to_exeecute := "cd " + getcurrentdir() + "/" + utility_name + " && docker build" + " -t " + utility_name +  " ."
-    fmt.Println(command_to_exeecute)
-    
-    cmd := exec.Command(command_to_exeecute)
+    dockerPath := getcurrentdir() + "/" + utility_name
+    fmt.Println(dockerPath)
 
-    stdout, err := cmd.Output()
-
-    if err != nil{
-    	fmt.Println(err.Error())
-    }
-
-    fmt.Println(string(stdout))
+    buildDockerImage(dockerPath, alpine_version)
 
 }
 

@@ -1,2 +1,2 @@
-ARG version
-FROM alpine:$version
+ARG ALPINE_VERSION
+FROM alpine:$ALPINE_VERSION
