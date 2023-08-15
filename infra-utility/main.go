@@ -3,91 +3,85 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"os/exec"
 	"os"
 	"strings"
 	"fmt"
 	"context"
-	"archive/tar"
-	"bytes"
+	"time"
+	"bufio"
+	"io"
+	"encoding/json"
+	"errors"
 	
     "github.com/tidwall/gjson" // more info https://github.com/tidwall/gjson
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
 )
 
-func getcurrentdir() string {
-  command_to_execute := "pwd"
-  cmd := exec.Command(command_to_execute)
-  stdout, err := cmd.Output()
-  fmt.Println(err)
-  return string(stdout)
+
+var dockerRegistryUserID = ""
+
+type ErrorDetail struct {
+	Message string `json:"message"`
 }
 
-func buildDockerImage(dockerPath string, alpine_version string){
-	tagName := "latest"
-	ctx := context.Background()
-	cli, err := client.NewEnvClient()
+type ErrorLine struct {
+	Error       string      `json:"error"`
+	ErrorDetail ErrorDetail `json:"errorDetail"`
+}
+
+func imageBuild(dockerClient *client.Client, path string ,tagName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
+	defer cancel()
+
+	tar, err := archive.TarWithOptions(path, &archive.TarOptions{})
 	if err != nil {
-		log.Fatal(err, " :unable to init client")
+		return err
 	}
 
-	buf := new(bytes.Buffer)
-	tw  := tar.NewWriter(buf)
-	defer tw.close()
-
-   dockerFile := "Dockerfile"
-   dockerFileReader, err := os.Open(dockerPath)
-   if err != nil {
-   		log.Fatal(err, " : unable to open Dockerfile")
-   }
-   readDockerFile, err := ioutil.ReadAll(dockerFileReader)
-   if err != nil {
-   		log.Fatal(err, " :unable to read dockerfile")
-   }
-
-   tarHeader := &tar.Header{
-   	Name: dockerFile,
-   	Size: int64(len(dockerFile)),
-   }
-   err = tw.WriteHeader(tarHeader)
-   if err != nil {
-   		log.Fatal(err, " :unable to write tar header")
-   }
-
-   _, err = tw.Write(readDockerFile)
-   if err != nil{
-   		log.Fatal(err, " :unable to write tar body")
-   }
-   dockerFileTarReader := bytes.NewReader(buf.Bytes())
-
-   // add any build args
-   buildArgs := make(map[string]*string)
-   buildArgs["ALPINE_VERSION"] =  alpine_version
-
-   imageBuildResponse, err := cli.ImageBuild(
-   	ctx,
-   	dockerFileTarReader.
-   	types.ImageBuildOptions{
-   		Context: dockerFileTarReader,
-   		Dockerfile: dockerFile,
-   		Tags: []string{tagName},
+	opts := types.ImageBuildOptions{
+		Dockerfile: "Dockerfile",
+		Tags: []string{tagName},
    		NoCache: true,
    		Remove: true,
-   		BuildArgs: buildArgs,
-   	})
-   	if err != nil {
-   		log.Fatal(err, " : unable to build docker image")
-   	}
-   	defer imageBuildResponse.Body.Close()
-   	_, err = io.Copy(os.stdout, imageBuildResponse.Body)
+	}
+	res, err := dockerClient.ImageBuild(ctx, tar, opts)
+	if err != nil {
+		return err
+	}
 
-   	if err != nil {
-   		log.Fatal(err, " : unable to read image build response")
-   	}
+	defer res.Body.Close()
 
+	err = print(res.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
+func print(rd io.Reader) error {
+	var lastLine string
+
+	scanner := bufio.NewScanner(rd)
+	for scanner.Scan() {
+		lastLine = scanner.Text()
+		fmt.Println(scanner.Text())
+	}
+
+	errLine := &ErrorLine{}
+	json.Unmarshal([]byte(lastLine), errLine)
+	if errLine.Error != "" {
+		return errors.New(errLine.Error)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func infrautility(utility_name string){
 	// read `versions.json` file
@@ -100,12 +94,25 @@ func infrautility(utility_name string){
     
     alpine_version := gjson.Get(string(content),"utilites.alpine_version")
     log.Printf("%s\n",alpine_version)
-    
-    dockerPath := getcurrentdir() + "/" + utility_name
+
+    mydir, err := os.Getwd()
+    if err != nil {
+        fmt.Println(err)
+    }
+    dockerPath := mydir+"/"+string(utility_name)
     fmt.Println(dockerPath)
 
-    buildDockerImage(dockerPath, alpine_version)
+    cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
+	err = imageBuild(cli, dockerPath, "latest")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 }
 
 func main(){
