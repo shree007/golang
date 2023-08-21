@@ -107,8 +107,11 @@ func infrautility(utility_name string){
 		fmt.Println(err.Error())
 		return
 	}
-
-	err = imageBuild(cli, dockerPath, "latest")
+    
+    version := "0.0.1"
+	tagName := string(utility_name)+":"+version
+	
+	err = imageBuild(cli, dockerPath, tagName)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
