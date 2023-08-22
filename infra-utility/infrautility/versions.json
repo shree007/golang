@@ -1,6 +1,6 @@
 {
   "utilites": {
-    "alpine_version": "3.14",
+    "alpine_version": "latest",
     "kubectl_version": "1.23.17",
     "helm2_version": "2.16.9",
     "helm3_version": "3.11.2",
