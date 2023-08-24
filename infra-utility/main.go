@@ -96,11 +96,11 @@ func infrautility(utility_name string){
     alpine_version := gjson.Get(string(content),"utilites.alpine_version")
     
     log.Printf("%s\n",alpine_version)
-    buildArgs := make(map[string]*string)
-    
-
-
-    buildArgs["ALPINE_VERSION"] = os.Getenv("GO_ENV")
+    fmt.Println(alpine_version)
+ 
+    buildArgs := map[string]*string{
+			    "ALPINE_VERSION": &alpine_version.Str,
+			  	}
     
     fmt.Println(buildArgs)
     
@@ -121,6 +121,7 @@ func infrautility(utility_name string){
 	tagName := string(utility_name)+":"+version
 	
 	err = imageBuild(cli, dockerPath, tagName, buildArgs)
+	
 	if err != nil {
 		fmt.Println(err.Error())
 		return
