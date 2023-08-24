@@ -1,4 +1,3 @@
-FROM node:12
-WORKDIR /src
-COPY . .
-CMD [ "node", "app.js" ]
+
+ARG ALPINE_VERSION
+FROM alpine:${ALPINE_VERSION}

@@ -31,7 +31,7 @@ type ErrorLine struct {
 	ErrorDetail ErrorDetail `json:"errorDetail"`
 }
 
-func imageBuild(dockerClient *client.Client, path string ,tagName string) error {
+func imageBuild(dockerClient *client.Client, path string ,tagName string, buildArgs map[string]*string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
 	defer cancel()
 
@@ -45,6 +45,7 @@ func imageBuild(dockerClient *client.Client, path string ,tagName string) error 
 		Tags: []string{tagName},
    		NoCache: true,
    		Remove: true,
+   		BuildArgs: buildArgs,
 	}
 	res, err := dockerClient.ImageBuild(ctx, tar, opts)
 	if err != nil {
@@ -93,8 +94,16 @@ func infrautility(utility_name string){
 	}
     
     alpine_version := gjson.Get(string(content),"utilites.alpine_version")
+    
     log.Printf("%s\n",alpine_version)
-
+    fmt.Println(alpine_version)
+ 
+    buildArgs := map[string]*string{
+			    "ALPINE_VERSION": &alpine_version.Str,
+			  	}
+    
+    fmt.Println(buildArgs)
+    
     mydir, err := os.Getwd()
     if err != nil {
         fmt.Println(err)
@@ -111,7 +120,8 @@ func infrautility(utility_name string){
     version := "0.0.1"
 	tagName := string(utility_name)+":"+version
 	
-	err = imageBuild(cli, dockerPath, tagName)
+	err = imageBuild(cli, dockerPath, tagName, buildArgs)
+	
 	if err != nil {
 		fmt.Println(err.Error())
 		return
