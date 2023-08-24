@@ -2,8 +2,9 @@
   "utilites": {
     "alpine_version": "latest",
     "kubectl_version": "1.23.17",
-    "helm2_version": "2.16.9",
-    "helm3_version": "3.11.2",
-    "aws_cli": "2.1.25"
+    "aws_cli": "2.1.25",
+    "python3_version": "3.8.4",
+    "terraform_version":"1.5.6",
+    "terragrunt_version":"v0.50.6"
   }
 }
