@@ -1,11 +1,11 @@
 https://fission.io/
 https://www.openfaas.com/
 
-
+$ go mod tidy
 $ go run main.go infrautility
 
 
-logs
+$ logs
 
 {"stream":"Step 1/4 : FROM node:12"}
 {"stream":"\n"}
