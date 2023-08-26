@@ -100,6 +100,7 @@ func infrautility(utility_name string){
  
     buildArgs := map[string]*string{
 			    "ALPINE_VERSION": &alpine_version.Str,
+			    "PYTHON3_VERSION": &python3_version.Str,
 			  	}
     
     fmt.Println(buildArgs)
