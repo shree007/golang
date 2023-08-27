@@ -94,13 +94,22 @@ func infrautility(utility_name string){
 	}
     
     alpine_version := gjson.Get(string(content),"utilites.alpine_version")
+    log.Printf("%s\n alpine_version: ",alpine_version)
+    python3_version := gjson.Get(string(content),"utilites.python3_version")
+    log.Printf("%s\n python3_version: ",python3_version)
+    aws_cli_version := gjson.Get(string(content),"utilites.aws_cli_version")
+    log.Printf("%s\n aws_cli_version: ",aws_cli_version)
+
+    
     
     log.Printf("%s\n",alpine_version)
-    fmt.Println(alpine_version)
+    log.Printf("%s\n",alpine_version)
+    
  
     buildArgs := map[string]*string{
 			    "ALPINE_VERSION": &alpine_version.Str,
 			    "PYTHON3_VERSION": &python3_version.Str,
+			    "AWSCLI_VERSION": &aws_cli_version.Str,
 			  	}
     
     fmt.Println(buildArgs)
