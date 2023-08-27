@@ -84,7 +84,9 @@ func print(rd io.Reader) error {
 	return nil
 }
 
-func infrautility(utility_name string){
+func infrautility(utility_name string, docker_function string){
+
+	log.Printf("%s\n", docker_function)
 	// read `versions.json` file
 	path := "./"+utility_name+"/versions.json"
 	content, err := ioutil.ReadFile(path)
@@ -132,20 +134,23 @@ func infrautility(utility_name string){
     
     version := "0.0.1"
 	tagName := string(utility_name)+":"+version
-	
+
+	if strings.Compare(docker_function, "dockerBuild") == 0 {
 	err = imageBuild(cli, dockerPath, tagName, buildArgs)
 	
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
+  } 
 }
 
 func main(){
 
 	utility_name := os.Args[1]
+	docker_function := os.Args[2]
 
 	if strings.Compare(string(utility_name),  "infrautility") == 0 {
- 			infrautility(string(utility_name))
+ 			infrautility(string(utility_name), string(docker_function))
 	}
 }
