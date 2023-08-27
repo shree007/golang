@@ -26,3 +26,8 @@ $ logs
 {"aux":{"ID":"sha256:ba7eebd4501d8eb3bc9e8e785e5636a4a04ee73b1c504c75df755f05e286a19b"}}
 {"stream":"Successfully built ba7eebd4501d\n"}
 {"stream":"Successfully tagged latest:latest\n"}
+
+
+#ARG TERRAGRUNT_VERSION
+#RUN curl -L https://github.com/gruntwork-io/terragrunt/releases/download/${TERRAGRUNT_VERSION}/terragrunt_linux_amd64 -o /usr/local/bin/terragrunt \
+    && chmod +x /usr/local/bin/terragrunt

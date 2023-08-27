@@ -101,12 +101,18 @@ func infrautility(utility_name string){
     log.Printf("%s\n aws_cli_version: ",aws_cli_version)
     kubectl_version := gjson.Get(string(content),"utilites.kubectl_version")
     log.Printf("%s\n kubectl_version: ",kubectl_version)
+    terraform_version := gjson.Get(string(content),"utilites.terraform_version")
+    log.Printf("%s\n terraform_version: ",terraform_version)
+    terragrunt_version := gjson.Get(string(content),"utilites.terragrunt_version")
+    log.Printf("%s\n terragrunt_version: ",terragrunt_version)
 
     buildArgs := map[string]*string{
 			    "ALPINE_VERSION": &alpine_version.Str,
 			    "PYTHON3_VERSION": &python3_version.Str,
 			    "AWSCLI_VERSION": &aws_cli_version.Str,
 			    "KUBECTL_VERSION": &kubectl_version.Str,
+			    "TERRAFORM_VERSION": &terraform_version.Str,
+			    "TERRAGRUNT_VERSION": &terragrunt_version.Str,
 			  	}
     
     fmt.Println(buildArgs)
