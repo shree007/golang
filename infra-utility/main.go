@@ -99,17 +99,14 @@ func infrautility(utility_name string){
     log.Printf("%s\n python3_version: ",python3_version)
     aws_cli_version := gjson.Get(string(content),"utilites.aws_cli_version")
     log.Printf("%s\n aws_cli_version: ",aws_cli_version)
+    kubectl_version := gjson.Get(string(content),"utilites.kubectl_version")
+    log.Printf("%s\n kubectl_version: ",kubectl_version)
 
-    
-    
-    log.Printf("%s\n",alpine_version)
-    log.Printf("%s\n",alpine_version)
-    
- 
     buildArgs := map[string]*string{
 			    "ALPINE_VERSION": &alpine_version.Str,
 			    "PYTHON3_VERSION": &python3_version.Str,
 			    "AWSCLI_VERSION": &aws_cli_version.Str,
+			    "KUBECTL_VERSION": &kubectl_version.Str,
 			  	}
     
     fmt.Println(buildArgs)

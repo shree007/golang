@@ -1,7 +1,7 @@
 {
   "utilites": {
     "alpine_version": "latest",
-    "kubectl_version": "1.23.17",
+    "kubectl_version": "v1.23.17",
     "aws_cli_version": "2.13.5",
     "python3_version": "3.11.5-r0",
     "terraform_version":"1.5.6",
