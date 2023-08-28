@@ -2,7 +2,7 @@
 ARG ALPINE_VERSION
 FROM alpine:${ALPINE_VERSION}
 
-RUN apk add curl wget
+RUN apk update && apk add curl wget
 
 ###### Start Install python3 ######
 ARG PYTHON3_VERSION
@@ -21,7 +21,6 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/bin/kubectl
 ###### End Install Kubectl #######
-
 
 ###### Start Install terraform ######
 ARG TERRAFORM_VERSION
