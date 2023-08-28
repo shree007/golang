@@ -31,6 +31,16 @@ type ErrorLine struct {
 	ErrorDetail ErrorDetail `json:"errorDetail"`
 }
 
+func getDirectory(utility_name string) string {
+	mydir, err := os.Getwd()
+    if err != nil {
+        fmt.Println(err)
+    }
+    dockerPath := mydir+"/"+utility_name
+    fmt.Println(dockerPath)
+    return string(dockerPath)
+}
+
 func imageBuild(dockerClient *client.Client, path string ,tagName string, buildArgs map[string]*string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
 	defer cancel()
@@ -119,24 +129,19 @@ func infrautility(utility_name string, docker_function string){
     
     fmt.Println(buildArgs)
     
-    mydir, err := os.Getwd()
-    if err != nil {
-        fmt.Println(err)
-    }
-    dockerPath := mydir+"/"+string(utility_name)
-    fmt.Println(dockerPath)
-
+    
+    
     cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-    
+
     version := "0.0.1"
 	tagName := string(utility_name)+":"+version
 
 	if strings.Compare(docker_function, "dockerBuild") == 0 {
-	err = imageBuild(cli, dockerPath, tagName, buildArgs)
+	err = imageBuild(cli, getDirectory(string(utility_name)), tagName, buildArgs)
 	
 	if err != nil {
 		fmt.Println(err.Error())
