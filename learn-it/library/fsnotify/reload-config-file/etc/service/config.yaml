@@ -1,0 +1,3 @@
+app_name: "grafana"
+log_level: "DEBUG"
+path: "etc/service"
