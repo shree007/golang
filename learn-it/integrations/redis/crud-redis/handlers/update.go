@@ -9,6 +9,7 @@ import (
 )
 
 func UpdateItem(c *gin.Context) {
+	config.Rdb.Do(config.Ctx, "SELECT", "0").Err()
 	var item models.Item
 	if err := c.ShouldBindJSON(&item); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

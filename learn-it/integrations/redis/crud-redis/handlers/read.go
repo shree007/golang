@@ -9,7 +9,8 @@ import (
 )
 
 func GetItem(c *gin.Context) {
-	key := c.Param("key")
+	config.Rdb.Do(config.Ctx, "SELECT", "0").Err()
+	key := c.Param("id")
 	value, err := config.Rdb.Get(config.Ctx, key).Result()
 	if err == redis.Nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})

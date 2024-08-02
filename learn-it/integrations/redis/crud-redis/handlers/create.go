@@ -14,6 +14,7 @@ func CreateItem(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	config.Rdb.Do(config.Ctx, "SELECT", 0)
 	err := config.Rdb.Set(config.Ctx, item.Key, item.Value, 0).Err()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
