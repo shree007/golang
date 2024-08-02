@@ -16,6 +16,7 @@ func InitRedis() {
 	Rdb = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		PoolSize: 10,
+		DB:       0,
 	})
 
 	/*

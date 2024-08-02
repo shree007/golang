@@ -8,7 +8,8 @@ import (
 )
 
 func DeleteItem(c *gin.Context) {
-	key := c.Param("key")
+	config.Rdb.Do(config.Ctx, "SELECT", "0").Err()
+	key := c.Param("id")
 
 	err := config.Rdb.Del(config.Ctx, key).Err()
 	if err != nil {
