@@ -6,6 +6,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/downloader"
+	"helm.sh/helm/v3/pkg/getter"
 )
 
 func main() {
@@ -29,6 +32,25 @@ func main() {
 				continue
 			}
 			log.Infof("Loaded charts are %s", chart.Name())
+			settings := cli.New()
+			manager := &downloader.Manager{
+				ChartPath:  chartPath,
+				Getters:    getter.All(settings),
+				SkipUpdate: false,
+				Out:        os.Stdout,
+			}
+
+			if err := manager.Update(); err != nil {
+				log.Errorf("Error while updating dependencies: %v", err)
+			} else {
+				log.Infof("Dependencies updated successfully")
+			}
+
+			if err := manager.Build(); err != nil {
+				log.Errorf("Error while building dependencies in chart %s: %v", chart.Name(), err)
+				continue
+			}
+			log.Infof("Dependencies built successfully for chart %s", chart.Name())
 		} else {
 			log.Infof("%s is not a directory: ", entry.Name())
 		}

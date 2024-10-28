@@ -24,6 +24,6 @@ OWNERS
 hack/
 ci/
 kube-prometheus-*.tgz
-
+helm/charts/kube-prometheus-stack/charts/*.tgz
 unittests/
 files/dashboards/
