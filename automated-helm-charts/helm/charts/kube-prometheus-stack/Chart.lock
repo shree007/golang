@@ -1,0 +1,18 @@
+dependencies:
+- name: crds
+  repository: ""
+  version: 0.0.0
+- name: kube-state-metrics
+  repository: file://charts/kube-state-metrics
+  version: 5.26.0
+- name: prometheus-node-exporter
+  repository: file://charts/prometheus-node-exporter
+  version: 4.40.0
+- name: grafana
+  repository: file://charts/grafana
+  version: 8.5.8
+- name: prometheus-windows-exporter
+  repository: file://charts/prometheus-windows-exporter
+  version: 0.7.0
+digest: sha256:9791e64ff56a4149e0d31a71e4d6c7b527d0054ee8b23a46887e0f0608c3a6fd
+generated: "2024-10-29T01:20:19.886+05:30"
