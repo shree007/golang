@@ -13,7 +13,7 @@ Feature:
 
 3. Build dependency based on Chart.yaml (Locally for now) (Done)
 
-4. Lint
+4. Lint (Basic Lint checking)
 
 5. Package (generate index file)
 
@@ -28,3 +28,5 @@ ToDo:
 A. 2 and 3 remotely by searching repo links
 
 B. Write testing for each function
+
+C. Helm lint

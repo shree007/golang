@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/downloader"
@@ -51,8 +53,40 @@ func main() {
 				continue
 			}
 			log.Infof("Dependencies built successfully for chart %s", chart.Name())
+
+			if err := lintChart(chart); err != nil {
+				log.Errorf("Linting Errors found in chart %s: %v", chart.Name(), err)
+			} else {
+				log.Infof("Linting passed for chart %s", chart.Name())
+			}
+
 		} else {
 			log.Infof("%s is not a directory: ", entry.Name())
 		}
 	}
+}
+
+func lintChart(chart *chart.Chart) error {
+	if chart.Metadata == nil {
+		return fmt.Errorf("missing chart metadata")
+	}
+
+	if chart.Metadata.Name == "" {
+		return fmt.Errorf("chart name is missing")
+	}
+
+	if chart.Metadata.Version == "" {
+		return fmt.Errorf("chart version is missing")
+	}
+
+	if len(chart.Templates) == 0 {
+		return fmt.Errorf("chart %s has no templates", chart.Name())
+	}
+
+	if len(chart.Values) == 0 {
+		log.Warnf("Chart %s has no default values", chart.Name())
+	}
+
+	log.Infof("Chart %s passed basic lint checks", chart.Name())
+	return nil
 }
