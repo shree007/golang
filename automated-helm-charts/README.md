@@ -1,5 +1,5 @@
 
-# Automated Helm Chart Deployment to S3 and JFrog Artifactory with Vulnerability Scanning
+# Automated Helm Chart Upload to S3 and JFrog Artifactory
 
 helm-chart
 ![helm-workflow](helm-workflow.png)
