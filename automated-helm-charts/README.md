@@ -30,3 +30,5 @@ A. 2 and 3 remotely by searching repo links
 B. Write testing for each function
 
 C. Helm lint
+
+D. Use digest, s3Url, build version in MustAdd method of index
