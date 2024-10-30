@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/downloader"
 	"helm.sh/helm/v3/pkg/getter"
@@ -59,6 +60,14 @@ func main() {
 			} else {
 				log.Infof("Linting passed for chart %s", chart.Name())
 			}
+
+			packagePath := "temp-helm-storage"
+
+			pkgPath, err := chartutil.Save(chart, packagePath)
+			if err != nil {
+				log.Errorf("error saving packaged chart %s: %v", chart.Name(), err)
+			}
+			log.Infof("Packaged chart %s to %s", chart.Name(), pkgPath)
 
 		} else {
 			log.Infof("%s is not a directory: ", entry.Name())

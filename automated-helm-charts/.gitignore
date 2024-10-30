@@ -1,1 +1,2 @@
 helm/charts/kube-prometheus-stack/charts/*.tgz
+temp-helm-storage/*.tgz
