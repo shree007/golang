@@ -22,6 +22,22 @@ const (
 	indexFilePath = "temp-helm-storage/index.yaml"
 )
 
+func init() {
+	matches, err := filepath.Glob(filepath.Join(packagePath, "*.tgz"))
+	if err != nil {
+		log.Fatalf("Error finding .tgz files: %v", err)
+	}
+
+	for _, match := range matches {
+		if err := os.Remove(match); err != nil {
+			log.Printf("Failed to remove file %s: %v", match, err)
+		}
+	}
+	if err := os.Truncate(indexFilePath, 0); err != nil {
+		log.Fatalf("Failed to truncate file: %v", err)
+	}
+}
+
 func main() {
 	log.Info("Read Base Directory: ", chartBasePath)
 	entries, err := os.ReadDir(chartBasePath)

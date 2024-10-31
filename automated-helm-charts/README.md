@@ -34,6 +34,5 @@ C. Helm lint
 D. Use digest, s3Url, build version in MustAdd method of index
 
 How to execute:
-1. rm -rf temp-helm-storage/*.tgz
-2. truncate -s 0 temp-helm-storage/index.yaml
+1. go mod tidy
 3. go run main.go
