@@ -49,7 +49,7 @@ func main() {
 		if entry.IsDir() {
 			chartPath := filepath.Join(chartBasePath, entry.Name())
 			log.Infof("Loading chart from %s", chartPath)
-			chart, err := loader.Load(chartPath)
+			chart, err := loadingChart(chartPath)
 
 			if err != nil {
 				log.Error("Erros in loading charts: ", err)
@@ -115,6 +115,10 @@ func main() {
 	} else {
 		log.Infof("Index file written successfully at %s", indexFilePath)
 	}
+}
+
+func loadingChart(charPath string) (*chart.Chart, error) {
+	return loader.Load(charPath)
 }
 
 func lintChart(chart *chart.Chart) error {
