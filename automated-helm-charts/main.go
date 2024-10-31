@@ -16,10 +16,13 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 )
 
+const (
+	chartBasePath = "helm/charts"
+	packagePath   = "temp-helm-storage"
+	indexFilePath = "temp-helm-storage/index.yaml"
+)
+
 func main() {
-	chartBasePath := "helm/charts"
-	packagePath := "temp-helm-storage"
-	indexFilePath := "temp-helm-storage/index.yaml"
 	log.Info("Read Base Directory: ", chartBasePath)
 	entries, err := os.ReadDir(chartBasePath)
 
