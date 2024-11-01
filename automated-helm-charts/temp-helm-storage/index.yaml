@@ -11,7 +11,7 @@ entries:
       artifacthub.io/operator: "true"
     apiVersion: v2
     appVersion: v0.77.2
-    created: "2024-11-02T01:48:25.139804+05:30"
+    created: "2024-11-02T01:52:06.624279+05:30"
     dependencies:
     - condition: crds.enabled
       name: crds
@@ -73,7 +73,7 @@ entries:
   prometheus-adapter:
   - apiVersion: v1
     appVersion: v0.12.0
-    created: "2024-11-02T01:48:25.144534+05:30"
+    created: "2024-11-02T01:52:06.631298+05:30"
     description: A Helm chart for k8s prometheus adapter
     digest: ' '
     home: https://github.com/kubernetes-sigs/prometheus-adapter
@@ -95,4 +95,4 @@ entries:
     urls:
     - '%20/prometheus-adapter-4.11.0.tgz'
     version: 4.11.0
-generated: "2024-11-02T01:48:24.935858+05:30"
+generated: "2024-11-02T01:52:06.414288+05:30"

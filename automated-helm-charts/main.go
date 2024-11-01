@@ -74,7 +74,7 @@ func processChart(chartName string, index *repo.IndexFile) {
 		return
 	}
 
-	if err := updateDependencies(chartPath); err != nil {
+	if err := updateAndBuildDependencies(chartPath); err != nil {
 		log.Errorf("Error updating dependencies: %v", err)
 		return
 	}
@@ -110,7 +110,7 @@ func createIndexFile(indexFilePath string) *repo.IndexFile {
 	return index
 }
 
-func updateDependencies(chartPath string) error {
+func updateAndBuildDependencies(chartPath string) error {
 	settings := cli.New()
 	manager := &downloader.Manager{
 		ChartPath:  chartPath,
