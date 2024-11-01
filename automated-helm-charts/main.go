@@ -42,72 +42,50 @@ func init() {
 }
 
 func main() {
-	log.Info("Read Base Directory: ", chartBasePath)
-	entries, err := os.ReadDir(chartBasePath)
-
-	if err != nil {
-		log.Error("Error Reading chart directory", err)
-		os.Exit(1)
-	}
+	log.Info("Starting Helm chart processing")
 
 	index := createIndexFile(indexFilePath)
 
+	entries, err := os.ReadDir(chartBasePath)
+	if err != nil {
+		log.Fatal("Error Reading chart directory: ", err)
+	}
+
 	for _, entry := range entries {
 		if entry.IsDir() {
-			chartPath := filepath.Join(chartBasePath, entry.Name())
-			log.Infof("Loading chart from %s", chartPath)
-			chart, err := loadingChart(chartPath)
-
-			if err != nil {
-				log.Error("Erros in loading charts: ", err)
-				continue
-			}
-			log.Infof("Loaded charts are %s", chart.Name())
-
-			if err := updateDependency(chartPath); err != nil {
-				log.Errorf("Error while updating dependencies: %v", err)
-			}
-			log.Infof("Dependencies built successfully for chart %s", chart.Name())
-
-			if err := lintChart(chart); err != nil {
-				log.Errorf("Linting Errors found in chart %s: %v", chart.Name(), err)
-			} else {
-				log.Infof("Linting passed for chart %s", chart.Name())
-			}
-
-			pkgPath, err := chartutil.Save(chart, packagePath)
-			if err != nil {
-				log.Errorf("error saving packaged chart %s: %v", chart.Name(), err)
-			}
-			log.Infof("Packaged chart %s to %s", chart.Name(), pkgPath)
-
-			chartURL := fmt.Sprintf("%s/%s-%s.tgz", packagePath, chart.Metadata.Name, chart.Metadata.Version)
-			log.Info("chartURL: ", chartURL)
-			if existingVersions, ok := index.Entries[chart.Metadata.Name]; ok {
-				versionExists := false
-				for _, v := range existingVersions {
-					if v.Version == chart.Metadata.Version {
-						versionExists = true
-						break
-					}
-				}
-				if versionExists {
-					log.Infof("Chart %s version %s already exists in the index, skipping", chart.Metadata.Name, chart.Metadata.Version)
-					continue
-				}
-			}
-			index.MustAdd(chart.Metadata, chartURL, " ", " ")
-			log.Infof("Added chart %s version %s to index", chart.Metadata.Name, chart.Metadata.Version)
-
+			processChart(entry.Name(), index)
 		} else {
-			log.Infof("%s is not a directory: ", entry.Name())
+			log.Infof("%s is not a directory", entry.Name())
 		}
 	}
-	if err := index.WriteFile(indexFilePath, 0644); err != nil {
-		log.Errorf("Error writing index file: %v", err)
-	} else {
-		log.Infof("Index file written successfully at %s", indexFilePath)
+
+	if err := writeIndexFile(index, indexFilePath); err != nil {
+		log.Fatal("Error writing index file: ", err)
 	}
+}
+
+func processChart(chartName string, index *repo.IndexFile) {
+	chartPath := filepath.Join(chartBasePath, chartName)
+	log.Infof("Loading chart from %s", chartPath)
+
+	chart, err := loadingChart(chartPath)
+	if err != nil {
+		log.Errorf("Error loading chart: %v", err)
+		return
+	}
+
+	if err := updateDependencies(chartPath); err != nil {
+		log.Errorf("Error updating dependencies: %v", err)
+		return
+	}
+
+	if err := lintChart(chart); err != nil {
+		log.Errorf("Linting Errors found in chart %s: %v", chart.Name(), err)
+		return
+	}
+
+	chartURL := packageChart(chart)
+	addToIndex(chart, chartURL, index)
 }
 
 func loadingChart(charPath string) (*chart.Chart, error) {
@@ -132,7 +110,7 @@ func createIndexFile(indexFilePath string) *repo.IndexFile {
 	return index
 }
 
-func updateDependency(chartPath string) error {
+func updateDependencies(chartPath string) error {
 	settings := cli.New()
 	manager := &downloader.Manager{
 		ChartPath:  chartPath,
@@ -181,4 +159,31 @@ func lintChart(chart *chart.Chart) error {
 
 	log.Infof("Chart %s passed basic lint checks", chart.Name())
 	return nil
+}
+
+func addToIndex(chart *chart.Chart, chartURL string, index *repo.IndexFile) {
+	if existingVersions, ok := index.Entries[chart.Metadata.Name]; ok {
+		for _, v := range existingVersions {
+			if v.Version == chart.Metadata.Version {
+				log.Infof("Chart %s version %s already exists in the index, skipping", chart.Metadata.Name, chart.Metadata.Version)
+				return
+			}
+		}
+	}
+	index.MustAdd(chart.Metadata, chartURL, " ", " ")
+	log.Infof("Added chart %s version %s to index", chart.Metadata.Name, chart.Metadata.Version)
+}
+
+func writeIndexFile(index *repo.IndexFile, path string) error {
+	return index.WriteFile(path, 0644)
+}
+
+func packageChart(chart *chart.Chart) string {
+	pkgPath, err := chartutil.Save(chart, packagePath)
+	if err != nil {
+		log.Errorf("error saving packaged chart %s: %v", chart.Name(), err)
+		return ""
+	}
+	log.Infof("Packaged chart %s to %s", chart.Name(), pkgPath)
+	return fmt.Sprintf("%s/%s-%s.tgz", packagePath, chart.Metadata.Name, chart.Metadata.Version)
 }
