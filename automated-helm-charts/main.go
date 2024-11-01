@@ -78,13 +78,6 @@ func main() {
 
 			if err := updateDependency(chartPath); err != nil {
 				log.Errorf("Error while updating dependencies: %v", err)
-			} else {
-				log.Infof("Dependencies updated successfully")
-			}
-
-			if err := BuildDependency(chartPath); err != nil {
-				log.Errorf("Error while building dependencies in chart %s: %v", chart.Name(), err)
-				continue
 			}
 			log.Infof("Dependencies built successfully for chart %s", chart.Name())
 
@@ -141,7 +134,11 @@ func updateDependency(chartPath string) error {
 		SkipUpdate: false,
 		Out:        os.Stdout,
 	}
-	return manager.Update()
+	if err := manager.Update(); err != nil {
+		return err
+	}
+	log.Info("Dependencies updated successfully")
+	return manager.Build()
 }
 
 func BuildDependency(chartPath string) error {
