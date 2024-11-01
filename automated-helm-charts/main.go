@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -50,19 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	index := repo.NewIndexFile()
-	if _, err := os.Stat(indexFilePath); err == nil {
-		indexFile, err := os.ReadFile(indexFilePath)
-		if err != nil {
-			log.Fatalf("Error reading index file: %v", err)
-		}
-		if err := yaml.Unmarshal(indexFile, index); err != nil {
-			log.Fatalf("Error unmarshaling index file: %v", err)
-		}
-		log.Infof("Loaded existing index file from %s", indexFilePath)
-	} else {
-		log.Infof("No existing index file found. A new one will be created at %s", indexFilePath)
-	}
+	index := createIndexFile(indexFilePath)
 
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -124,6 +112,24 @@ func main() {
 
 func loadingChart(charPath string) (*chart.Chart, error) {
 	return loader.Load(charPath)
+}
+
+func createIndexFile(indexFilePath string) *repo.IndexFile {
+	index := repo.NewIndexFile()
+
+	if _, err := os.Stat(indexFilePath); err == nil {
+		indexFile, err := os.ReadFile(indexFilePath)
+		if err != nil {
+			log.Fatalf("Error reading index file: %v", err)
+		}
+		if err := yaml.Unmarshal(indexFile, index); err != nil {
+			log.Fatalf("Error unmarshaling index file: %v", err)
+		}
+		log.Infof("Loaded existing index file from %s", indexFilePath)
+	} else {
+		log.Infof("No existing index file found. A new one will be created at %s", indexFilePath)
+	}
+	return index
 }
 
 func updateDependency(chartPath string) error {
