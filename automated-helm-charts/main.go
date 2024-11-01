@@ -22,6 +22,9 @@ const (
 	indexFilePath = "temp-helm-storage/index.yaml"
 )
 
+/*
+Cleanup index file old packaged charts and before starting
+*/
 func init() {
 	matches, err := filepath.Glob(filepath.Join(packagePath, "*.tgz"))
 	if err != nil {
