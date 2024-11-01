@@ -75,21 +75,14 @@ func main() {
 				continue
 			}
 			log.Infof("Loaded charts are %s", chart.Name())
-			settings := cli.New()
-			manager := &downloader.Manager{
-				ChartPath:  chartPath,
-				Getters:    getter.All(settings),
-				SkipUpdate: false,
-				Out:        os.Stdout,
-			}
 
-			if err := manager.Update(); err != nil {
+			if err := updateDependency(chartPath); err != nil {
 				log.Errorf("Error while updating dependencies: %v", err)
 			} else {
 				log.Infof("Dependencies updated successfully")
 			}
 
-			if err := manager.Build(); err != nil {
+			if err := BuildDependency(chartPath); err != nil {
 				log.Errorf("Error while building dependencies in chart %s: %v", chart.Name(), err)
 				continue
 			}
@@ -138,6 +131,28 @@ func main() {
 
 func loadingChart(charPath string) (*chart.Chart, error) {
 	return loader.Load(charPath)
+}
+
+func updateDependency(chartPath string) error {
+	settings := cli.New()
+	manager := &downloader.Manager{
+		ChartPath:  chartPath,
+		Getters:    getter.All(settings),
+		SkipUpdate: false,
+		Out:        os.Stdout,
+	}
+	return manager.Update()
+}
+
+func BuildDependency(chartPath string) error {
+	settings := cli.New()
+	manager := &downloader.Manager{
+		ChartPath:  chartPath,
+		Getters:    getter.All(settings),
+		SkipUpdate: false,
+		Out:        os.Stdout,
+	}
+	return manager.Build()
 }
 
 func lintChart(chart *chart.Chart) error {
