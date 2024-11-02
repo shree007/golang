@@ -17,9 +17,11 @@ import (
 )
 
 const (
-	chartBasePath = "helm/charts"
-	packagePath   = "temp-helm-storage"
-	indexFilePath = "temp-helm-storage/index.yaml"
+	chartBasePath    = "helm/charts"
+	packagePath      = "temp-helm-storage"
+	indexFilePath    = "temp-helm-storage/index.yaml"
+	jfrogArtifactURL = "https://linkinpark.jfrog.io/artifactory"
+	jfrogRepoName    = "linkinpark-helm"
 )
 
 /*
@@ -43,7 +45,6 @@ func init() {
 
 func main() {
 	log.Info("Starting Helm chart processing")
-
 	index := createIndexFile(indexFilePath)
 
 	entries, err := os.ReadDir(chartBasePath)
@@ -62,6 +63,8 @@ func main() {
 	if err := writeIndexFile(index, indexFilePath); err != nil {
 		log.Fatal("Error writing index file: ", err)
 	}
+	uploadToJfrogArtifactory()
+
 }
 
 func processChart(chartName string, index *repo.IndexFile) {
@@ -186,4 +189,22 @@ func packageChart(chart *chart.Chart) string {
 	}
 	log.Infof("Packaged chart %s to %s", chart.Name(), pkgPath)
 	return fmt.Sprintf("%s/%s-%s.tgz", packagePath, chart.Metadata.Name, chart.Metadata.Version)
+}
+
+func uploadToJfrogArtifactory() {
+	entries, err := os.ReadDir(packagePath)
+	if err != nil {
+		log.Errorf("Reading temp directory of packaged charts has problem %v ", err)
+	}
+
+	for _, entry := range entries {
+		chartPath := filepath.Join(packagePath, entry.Name())
+		file, err := os.Open(chartPath)
+		if err != nil {
+			log.Errorf("Error whilst reading %v", err)
+		}
+		uploadURL := fmt.Sprintf("%s/%s/%s", jfrogArtifactURL, jfrogRepoName, filepath.Base(chartPath))
+		fmt.Println("Upload URL: ", uploadURL)
+		fmt.Println("File: ", file)
+	}
 }
