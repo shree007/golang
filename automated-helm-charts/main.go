@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -192,6 +193,7 @@ func packageChart(chart *chart.Chart) string {
 }
 
 func uploadToJfrogArtifactory() {
+	jfrogUploadAPIKey := os.Getenv("jfrog_upload_api_key") // I have exported key in OS already in form of env variable
 	entries, err := os.ReadDir(packagePath)
 	if err != nil {
 		log.Errorf("Reading temp directory of packaged charts has problem %v ", err)
@@ -203,8 +205,27 @@ func uploadToJfrogArtifactory() {
 		if err != nil {
 			log.Errorf("Error whilst reading %v", err)
 		}
+		defer file.Close()
+
 		uploadURL := fmt.Sprintf("%s/%s/%s", jfrogArtifactURL, jfrogRepoName, filepath.Base(chartPath))
-		fmt.Println("Upload URL: ", uploadURL)
-		fmt.Println("File: ", file)
+		request, err := http.NewRequest("PUT", uploadURL, file)
+		if err != nil {
+			log.Errorf("Error whilst creating request %v", err)
+		}
+
+		request.Header.Set("Content-Type", "application/octet-stream")
+		request.Header.Set("Authorization", "Bearer "+jfrogUploadAPIKey)
+
+		client := &http.Client{}
+		response, err := client.Do(request)
+		if err != nil {
+			log.Errorf("error during request: %w", err)
+		}
+		defer response.Body.Close()
+		if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated {
+			log.Errorf("failed to upload file: %s", response.Status)
+		}
+
+		fmt.Printf("Uploaded %s successfully to %s\n", chartPath, uploadURL)
 	}
 }
