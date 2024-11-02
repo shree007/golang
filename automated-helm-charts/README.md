@@ -13,15 +13,18 @@ Feature:
 
 3. Build dependency based on Chart.yaml (Locally for now) (Done)
 
-4. Lint (Basic Lint checking)
+4. Lint (Basic Lint checking) (Done)
 
-5. Package (generate index file)
+5. Package (generate index file) (Done)
 
-6. Push into Jfrog
+6. Push into Jfrog (Done)
+
+![jfrog-upload-success](jfrog-upload-success.png)
+
 
 7. Push into S3
 
-8. Test helm chart in github pipeline
+8. Use github pipeline
 
 ToDo:
 
