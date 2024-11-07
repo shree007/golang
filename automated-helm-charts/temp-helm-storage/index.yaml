@@ -11,7 +11,7 @@ entries:
       artifacthub.io/operator: "true"
     apiVersion: v2
     appVersion: v0.77.2
-    created: "2024-11-03T01:11:51.464607+05:30"
+    created: "2024-11-07T10:37:47.813128+05:30"
     dependencies:
     - condition: crds.enabled
       name: crds
@@ -68,12 +68,12 @@ entries:
     - https://github.com/prometheus-operator/kube-prometheus
     type: application
     urls:
-    - '%20/kube-prometheus-stack-65.5.0.tgz'
+    - '%20/temp-helm-storagekube-prometheus-stack-65.5.0.tgz'
     version: 65.5.0
   prometheus-adapter:
   - apiVersion: v1
     appVersion: v0.12.0
-    created: "2024-11-03T01:11:51.503803+05:30"
+    created: "2024-11-07T10:37:47.819581+05:30"
     description: A Helm chart for k8s prometheus adapter
     digest: ' '
     home: https://github.com/kubernetes-sigs/prometheus-adapter
@@ -93,6 +93,6 @@ entries:
     - https://github.com/kubernetes/charts
     - https://github.com/kubernetes-sigs/prometheus-adapter
     urls:
-    - '%20/prometheus-adapter-4.11.0.tgz'
+    - '%20/temp-helm-storageprometheus-adapter-4.11.0.tgz'
     version: 4.11.0
-generated: "2024-11-03T01:11:51.244015+05:30"
+generated: "2024-11-06T18:05:55.397226223Z"
