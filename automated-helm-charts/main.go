@@ -168,16 +168,13 @@ func lintChart(chart *chart.Chart) error {
 }
 
 func addToIndex(chart *chart.Chart, chartURL string, index *repo.IndexFile) {
+	chartName := chart.Metadata.Name
+	chartVersion := chart.Metadata.Version
 	if existingVersions, ok := index.Entries[chart.Metadata.Name]; ok {
-		already_exists_version := false
 		for _, v := range existingVersions {
 			if v.Version == chart.Metadata.Version {
-				already_exists_version = true
 				break
 			}
-		}
-		if already_exists_version {
-			log.Infof("Chart %s version %s already exists in the index, skipping", chart.Metadata.Name, chart.Metadata.Version)
 		}
 	}
 	index.MustAdd(chart.Metadata, chartURL, " ", " ")
