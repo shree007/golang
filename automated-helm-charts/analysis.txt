@@ -1,0 +1,44 @@
+Problem statement:
+New version of chart is not being added for same chart name in index file
+
+Option: (first time)
+1. create empty index file in target directory
+2. package helm chart to target directory
+3. add tgz to index file of target directory 
+
+Now new one:
+1. remove existing one and try to add in index.file
+
+what worked (condtion: only one tgz file)
+step:
+first create package
+1. helm package helm/charts/kube-prometheus-stack -d temp-helm-storage
+
+2. helm repo index  temp-helm-storage --merge temp-helm-storage/index.yaml
+  
+
+helm package helm/charts/prometheus-adapter -d temp-helm-storage
+
+Troubleshooting step:
+1. downloaded file from artifactory
+it has following content 
+
+apiVersion: v1
+entries: {}
+generated: 2024-11-10T09:12:16.757090406Z
+
+and index has this 
+
+INFO[0001] &{map[] v1 2024-11-10 09:12:16.757090406 +0000 UTC map[] [] map[]} 
+
+2. check entries from helm/charts dir 
+
+entries:
+INFO[0001] [d kube-prometheus-stack/ d prometheus-adapter/] 
+
+3. entry.Name, index 
+
+kube-prometheus-stack&{map[] v1 2024-11-10 09:12:16.757090406 +0000 UTC map[] [] map[]}prometheus-adapter&{map[] v1 2024-11-10 09:12:16.757090406 +0000 UTC map[] [] map[]}
+
+What is not working:
+1. current code is overrding to index file not

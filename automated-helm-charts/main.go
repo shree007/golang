@@ -49,11 +49,13 @@ func main() {
 	}
 
 	index := manageIndexFile(indexFilePath)
+	log.Info(index)
 
 	entries, err := os.ReadDir(chartBasePath)
 	if err != nil {
 		log.Fatal("Error Reading chart directory: ", err)
 	}
+	log.Info(entries)
 
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -63,23 +65,26 @@ func main() {
 		}
 	}
 
+	fmt.Println(index)
+
 	if err := writeIndexFile(index, indexFilePath); err != nil {
 		log.Fatal("Error writing index file: ", err)
 	}
-	uploadToJfrogArtifactory()
+	// uploadToJfrogArtifactory()
 
 }
 
 func processChart(chartName string, index *repo.IndexFile) {
+
 	chartPath := filepath.Join(chartBasePath, chartName)
 	log.Infof("Loading chart from %s", chartPath)
+	log.Info(index)
 
 	chart, err := loadingChart(chartPath)
 	if err != nil {
 		log.Errorf("Error loading chart: %v", err)
 		return
 	}
-
 	if err := updateAndBuildDependencies(chartPath); err != nil {
 		log.Errorf("Error updating dependencies: %v", err)
 		return
@@ -91,6 +96,8 @@ func processChart(chartName string, index *repo.IndexFile) {
 	}
 
 	chartURL := packageChart(chart)
+	log.Infof("chartURL is %s", chartURL)
+
 	addToIndex(chart, chartURL, index)
 }
 
@@ -180,7 +187,10 @@ func addToIndex(chart *chart.Chart, chartURL string, index *repo.IndexFile) {
 			log.Infof("Chart %s version %s already exists in the index, skipping", chart.Metadata.Name, chart.Metadata.Version)
 		}
 	}
-	index.MustAdd(chart.Metadata, chartURL, " ", " ")
+	fmt.Println("chart metadata.....", chart.Metadata)
+	fmt.Println("chart url.....", chartURL)
+
+	index.MustAdd(chart.Metadata, " ", chartURL, " ")
 	log.Infof("Added chart %s version %s to index", chart.Metadata.Name, chart.Metadata.Version)
 }
 
@@ -195,7 +205,7 @@ func packageChart(chart *chart.Chart) string {
 		return ""
 	}
 	log.Infof("Packaged chart %s to %s", chart.Name(), pkgPath)
-	return fmt.Sprintf("%s%s-%s.tgz", packagePath, chart.Metadata.Name, chart.Metadata.Version)
+	return fmt.Sprintf("%s/%s-%s.tgz", packagePath, chart.Metadata.Name, chart.Metadata.Version)
 }
 
 func uploadToJfrogArtifactory() {
@@ -272,4 +282,5 @@ func downloadIndexFile() error {
 
 	_, err = io.Copy(out, response.Body)
 	return err
+
 }
