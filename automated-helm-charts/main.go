@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -20,71 +21,65 @@ import (
 
 const (
 	chartBasePath    = "helm/charts"
-	packagePath      = "temp-helm-storage"
-	indexFilePath    = "temp-helm-storage/index.yaml"
+	packageOutputDir = "temp-helm-storage"
 	jfrogArtifactURL = "https://linkinpark.jfrog.io/artifactory/"
 	jfrogRepoName    = "linkinpark-helmchart-helm-local"
+	indexFilePath    = "temp-helm-storage/index.yaml"
 )
 
-/*
-Cleanup index file old packaged charts and before starting
-*/
-func init() {
-	if _, err := os.Stat(packagePath); os.IsNotExist(err) {
-		log.Errorf("Directory does not exists, nothing to remove %v", err)
-	}
-
-	if err := os.RemoveAll(packagePath); err != nil {
-		log.Errorf("Failed to remove directory %v", err)
-	} else {
-		log.Info("Directory has been removed")
-	}
-}
+var packagedChartPaths []string
 
 func main() {
-	log.Info("Starting Helm chart processing")
+	log.Info("Processing Helm chart...")
 
 	if err := downloadIndexFile(); err != nil {
 		log.Fatalf("Failed to Download Index file %v", err)
 	}
 
-	index := manageIndexFile(indexFilePath)
-	log.Info(index)
-
 	entries, err := os.ReadDir(chartBasePath)
 	if err != nil {
 		log.Fatal("Error Reading chart directory: ", err)
 	}
-	log.Info(entries)
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			processChart(entry.Name(), index)
+			processChart(entry.Name())
 		} else {
 			log.Infof("%s is not a directory", entry.Name())
 		}
 	}
 
+	index, err := loadOrCreateIndex(indexFilePath)
+	if err != nil {
+		log.Fatalf("Failed to load or create index file: %v", err)
+	}
 	fmt.Println(index)
 
-	if err := writeIndexFile(index, indexFilePath); err != nil {
-		log.Fatal("Error writing index file: ", err)
-	}
-	// uploadToJfrogArtifactory()
+	fmt.Println(packagedChartPaths)
 
+	for _, packagedChartPath := range packagedChartPaths {
+		chartURL := filepath.Join(packageOutputDir, filepath.Base(packagedChartPath))
+		if err := addToIndexFile(index, packagedChartPath, chartURL); err != nil {
+			log.Fatalf("Failed to add chart to index file: %v", err)
+		}
+
+	}
+
+	if err := saveIndexFile(index, indexFilePath); err != nil {
+		log.Fatalf("Failed to save index file: %v", err)
+	}
 }
 
-func processChart(chartName string, index *repo.IndexFile) {
-
+func processChart(chartName string) {
 	chartPath := filepath.Join(chartBasePath, chartName)
 	log.Infof("Loading chart from %s", chartPath)
-	log.Info(index)
 
 	chart, err := loadingChart(chartPath)
 	if err != nil {
 		log.Errorf("Error loading chart: %v", err)
 		return
 	}
+
 	if err := updateAndBuildDependencies(chartPath); err != nil {
 		log.Errorf("Error updating dependencies: %v", err)
 		return
@@ -95,58 +90,17 @@ func processChart(chartName string, index *repo.IndexFile) {
 		return
 	}
 
-	chartURL := packageChart(chart)
-	log.Infof("chartURL is %s", chartURL)
+	packagedChartPath, err := packageChart(chartPath, packageOutputDir)
+	if err != nil {
+		log.Fatalf("Failed to package chart: %v", err)
+	}
+	log.Info(packagedChartPath)
 
-	addToIndex(chart, chartURL, index)
+	packagedChartPaths = append(packagedChartPaths, packagedChartPath)
 }
 
 func loadingChart(charPath string) (*chart.Chart, error) {
 	return loader.Load(charPath)
-}
-
-func manageIndexFile(indexFilePath string) *repo.IndexFile {
-	index := repo.NewIndexFile()
-
-	if _, err := os.Stat(indexFilePath); err == nil {
-		indexFile, err := os.ReadFile(indexFilePath)
-		if err != nil {
-			log.Fatalf("Error reading index file: %v", err)
-		}
-		if err := yaml.Unmarshal(indexFile, index); err != nil {
-			log.Fatalf("Error unmarshaling index file: %v", err)
-		}
-		log.Infof("Loaded existing index file from %s", indexFilePath)
-	} else {
-		log.Infof("No existing index file found. A new one will be created at %s", indexFilePath)
-	}
-	return index
-}
-
-func updateAndBuildDependencies(chartPath string) error {
-	settings := cli.New()
-	manager := &downloader.Manager{
-		ChartPath:  chartPath,
-		Getters:    getter.All(settings),
-		SkipUpdate: false,
-		Out:        os.Stdout,
-	}
-	if err := manager.Update(); err != nil {
-		return err
-	}
-	log.Info("Dependencies updated successfully")
-	return manager.Build()
-}
-
-func BuildDependency(chartPath string) error {
-	settings := cli.New()
-	manager := &downloader.Manager{
-		ChartPath:  chartPath,
-		Getters:    getter.All(settings),
-		SkipUpdate: false,
-		Out:        os.Stdout,
-	}
-	return manager.Build()
 }
 
 func lintChart(chart *chart.Chart) error {
@@ -174,76 +128,19 @@ func lintChart(chart *chart.Chart) error {
 	return nil
 }
 
-func addToIndex(chart *chart.Chart, chartURL string, index *repo.IndexFile) {
-	if existingVersions, ok := index.Entries[chart.Metadata.Name]; ok {
-		already_exists_version := false
-		for _, v := range existingVersions {
-			if v.Version == chart.Metadata.Version {
-				already_exists_version = true
-				break
-			}
-		}
-		if already_exists_version {
-			log.Infof("Chart %s version %s already exists in the index, skipping", chart.Metadata.Name, chart.Metadata.Version)
-		}
+func updateAndBuildDependencies(chartPath string) error {
+	settings := cli.New()
+	manager := &downloader.Manager{
+		ChartPath:  chartPath,
+		Getters:    getter.All(settings),
+		SkipUpdate: false,
+		Out:        os.Stdout,
 	}
-	fmt.Println("chart metadata.....", chart.Metadata)
-	fmt.Println("chart url.....", chartURL)
-
-	index.MustAdd(chart.Metadata, " ", chartURL, " ")
-	log.Infof("Added chart %s version %s to index", chart.Metadata.Name, chart.Metadata.Version)
-}
-
-func writeIndexFile(index *repo.IndexFile, path string) error {
-	return index.WriteFile(path, 0644)
-}
-
-func packageChart(chart *chart.Chart) string {
-	pkgPath, err := chartutil.Save(chart, packagePath)
-	if err != nil {
-		log.Errorf("error saving packaged chart %s: %v", chart.Name(), err)
-		return ""
+	if err := manager.Update(); err != nil {
+		return err
 	}
-	log.Infof("Packaged chart %s to %s", chart.Name(), pkgPath)
-	return fmt.Sprintf("%s/%s-%s.tgz", packagePath, chart.Metadata.Name, chart.Metadata.Version)
-}
-
-func uploadToJfrogArtifactory() {
-	jfrogUploadAPIKey := os.Getenv("jfrog_upload_api_key") // I have exported key in OS already in form of env variable
-	entries, err := os.ReadDir(packagePath)
-	if err != nil {
-		log.Errorf("Reading temp directory of packaged charts has problem %v ", err)
-	}
-
-	for _, entry := range entries {
-		chartPath := filepath.Join(packagePath, entry.Name())
-		file, err := os.Open(chartPath)
-		if err != nil {
-			log.Errorf("Error whilst reading %v", err)
-		}
-		defer file.Close()
-
-		uploadURL := fmt.Sprintf("%s%s/%s", jfrogArtifactURL, jfrogRepoName, filepath.Base(chartPath))
-		request, err := http.NewRequest("PUT", uploadURL, file)
-		if err != nil {
-			log.Errorf("Error whilst creating request %v", err)
-		}
-
-		request.Header.Set("Content-Type", "application/octet-stream")
-		request.Header.Set("Authorization", "Bearer "+jfrogUploadAPIKey)
-
-		client := &http.Client{}
-		response, err := client.Do(request)
-		if err != nil {
-			log.Errorf("error during request: %w", err)
-		}
-		defer response.Body.Close()
-		if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated {
-			log.Errorf("failed to upload file: %s", response.Status)
-		}
-
-		fmt.Printf("Uploaded %s successfully to %s\n", chartPath, uploadURL)
-	}
+	log.Info("Dependencies updated successfully")
+	return manager.Build()
 }
 
 func downloadIndexFile() error {
@@ -282,5 +179,77 @@ func downloadIndexFile() error {
 
 	_, err = io.Copy(out, response.Body)
 	return err
+}
 
+func packageChart(chartPath, outputDir string) (string, error) {
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to load chart: %w", err)
+	}
+
+	packagedChartPath, err := chartutil.Save(chart, outputDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to package chart: %w", err)
+	}
+
+	log.Printf("Chart %s packaged successfully at %s", chart.Metadata.Name, packagedChartPath)
+	return packagedChartPath, nil
+}
+
+func loadOrCreateIndex(indexPath string) (*repo.IndexFile, error) {
+	index := repo.NewIndexFile()
+
+	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
+		log.Println("No existing index file found, creating a new index")
+		return index, nil
+	}
+
+	data, err := os.ReadFile(indexPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read index file: %w", err)
+	}
+
+	if err := yaml.Unmarshal(data, index); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal index file: %w", err)
+	}
+
+	log.Println("Loaded existing index file")
+	return index, nil
+}
+
+// addToIndexFile adds a chart to the index file with the provided URL
+func addToIndexFile(index *repo.IndexFile, chartPath, url string) error {
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		return fmt.Errorf("failed to load chart: %w", err)
+	}
+
+	version := &repo.ChartVersion{
+		Metadata: chart.Metadata,
+		URLs:     []string{url},
+		Created:  time.Now(),
+	}
+
+	if index.Entries[chart.Metadata.Name] == nil {
+		index.Entries[chart.Metadata.Name] = repo.ChartVersions{}
+	}
+
+	index.Entries[chart.Metadata.Name] = append(index.Entries[chart.Metadata.Name], version)
+	log.Printf("Added chart %s version %s to index", chart.Metadata.Name, chart.Metadata.Version)
+	return nil
+}
+
+func saveIndexFile(index *repo.IndexFile, path string) error {
+	index.SortEntries()
+	data, err := yaml.Marshal(index)
+	if err != nil {
+		return fmt.Errorf("failed to marshal index file: %w", err)
+	}
+
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("failed to write index file: %w", err)
+	}
+
+	log.Printf("Index file saved at %s", path)
+	return nil
 }

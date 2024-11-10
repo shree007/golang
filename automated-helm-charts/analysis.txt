@@ -42,3 +42,8 @@ kube-prometheus-stack&{map[] v1 2024-11-10 09:12:16.757090406 +0000 UTC map[] []
 
 What is not working:
 1. current code is overrding to index file not
+
+It worked:
+
+solution:
+since I was passing index in processchart function so it was overriding
