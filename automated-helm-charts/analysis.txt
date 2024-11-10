@@ -47,3 +47,10 @@ It worked:
 
 solution:
 since I was passing index in processchart function so it was overriding
+
+====
+what is not working yet:
+
+index.yaml generated in locally is different than jfog, i need to generate index.yaml like jfrog yaml
+
+compare with both and fix in addIndex file

@@ -29,6 +29,18 @@ const (
 
 var packagedChartPaths []string
 
+func init() {
+	if _, err := os.Stat(packageOutputDir); os.IsNotExist(err) {
+		log.Errorf("Directory does not exists, nothing to remove %v", err)
+	}
+
+	if err := os.RemoveAll(packageOutputDir); err != nil {
+		log.Errorf("Failed to remove directory %v", err)
+	} else {
+		log.Info("Directory has been removed")
+	}
+}
+
 func main() {
 	log.Info("Processing Helm chart...")
 
@@ -68,6 +80,8 @@ func main() {
 	if err := saveIndexFile(index, indexFilePath); err != nil {
 		log.Fatalf("Failed to save index file: %v", err)
 	}
+
+	uploadToJfrogArtifactory()
 }
 
 func processChart(chartName string) {
@@ -252,4 +266,42 @@ func saveIndexFile(index *repo.IndexFile, path string) error {
 
 	log.Printf("Index file saved at %s", path)
 	return nil
+}
+
+func uploadToJfrogArtifactory() {
+	jfrogUploadAPIKey := os.Getenv("jfrog_upload_api_key") // I have exported key in OS already in form of env variable
+	entries, err := os.ReadDir(packageOutputDir)
+	if err != nil {
+		log.Errorf("Reading temp directory of packaged charts has problem %v ", err)
+	}
+
+	for _, entry := range entries {
+		chartPath := filepath.Join(packageOutputDir, entry.Name())
+		file, err := os.Open(chartPath)
+		if err != nil {
+			log.Errorf("Error whilst reading %v", err)
+		}
+		defer file.Close()
+
+		uploadURL := fmt.Sprintf("%s%s/%s", jfrogArtifactURL, jfrogRepoName, filepath.Base(chartPath))
+		request, err := http.NewRequest("PUT", uploadURL, file)
+		if err != nil {
+			log.Errorf("Error whilst creating request %v", err)
+		}
+
+		request.Header.Set("Content-Type", "application/octet-stream")
+		request.Header.Set("Authorization", "Bearer "+jfrogUploadAPIKey)
+
+		client := &http.Client{}
+		response, err := client.Do(request)
+		if err != nil {
+			log.Errorf("error during request: %v", err)
+		}
+		defer response.Body.Close()
+		if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusCreated {
+			log.Errorf("failed to upload file: %s", response.Status)
+		}
+
+		fmt.Printf("Uploaded %s successfully to %s\n", chartPath, uploadURL)
+	}
 }
