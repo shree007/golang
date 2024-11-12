@@ -27,6 +27,21 @@ const (
 	indexFilePath    = "temp-helm-storage/index.yaml"
 )
 
+type chartDetails struct {
+	APIVersion  string              `yaml:"apiVersion"`
+	Created     string              `yaml:"created"`
+	Description string              `yaml:"description"`
+	Digest      string              `yaml:"digest"`
+	Home        string              `yaml:"home"`
+	Keywords    []string            `yaml:"keywords,omitempty"`
+	Maintainers []*chart.Maintainer `yaml:"maintainers, omitempty"`
+	Name        string              `yaml:"name"`
+	Sources     []string            `yaml:"sources,omitempty"`
+	URLs        []string            `yaml:"urls"`
+	AppVersion  string              `yaml:"appVersion"`
+	Version     string              `yaml:"version"`
+}
+
 var packagedChartPaths []string
 
 func init() {
