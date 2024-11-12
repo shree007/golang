@@ -59,9 +59,9 @@ func init() {
 func main() {
 	log.Info("Processing Helm chart...")
 
-	if err := downloadIndexFile(); err != nil {
-		log.Fatalf("Failed to Download Index file %v", err)
-	}
+	// if err := downloadIndexFile(); err != nil {
+	// 	log.Fatalf("Failed to Download Index file %v", err)
+	// }
 
 	entries, err := os.ReadDir(chartBasePath)
 	if err != nil {
@@ -96,7 +96,7 @@ func main() {
 		log.Fatalf("Failed to save index file: %v", err)
 	}
 
-	uploadToJfrogArtifactory()
+	//uploadToJfrogArtifactory()
 }
 
 func processChart(chartName string) {
@@ -246,28 +246,6 @@ func loadOrCreateIndex(indexPath string) (*repo.IndexFile, error) {
 	return index, nil
 }
 
-// addToIndexFile adds a chart to the index file with the provided URL
-func addToIndexFile(index *repo.IndexFile, chartPath, url string) error {
-	chart, err := loader.Load(chartPath)
-	if err != nil {
-		return fmt.Errorf("failed to load chart: %w", err)
-	}
-
-	version := &repo.ChartVersion{
-		Metadata: chart.Metadata,
-		URLs:     []string{url},
-		Created:  time.Now(),
-	}
-
-	if index.Entries[chart.Metadata.Name] == nil {
-		index.Entries[chart.Metadata.Name] = repo.ChartVersions{}
-	}
-
-	index.Entries[chart.Metadata.Name] = append(index.Entries[chart.Metadata.Name], version)
-	log.Printf("Added chart %s version %s to index", chart.Metadata.Name, chart.Metadata.Version)
-	return nil
-}
-
 func saveIndexFile(index *repo.IndexFile, path string) error {
 	index.SortEntries()
 	data, err := yaml.Marshal(index)
@@ -319,4 +297,42 @@ func uploadToJfrogArtifactory() {
 
 		fmt.Printf("Uploaded %s successfully to %s\n", chartPath, uploadURL)
 	}
+}
+
+func addToIndexFile(index *repo.IndexFile, chartPath, url string) error {
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		return fmt.Errorf("failed to load chart: %w", err)
+	}
+
+	chartDetails := &chartDetails{
+		APIVersion:  chart.Metadata.APIVersion,
+		Created:     time.Now().Format(time.RFC3339Nano),
+		Description: chart.Metadata.Description,
+		Digest:      "", // I will add it later
+		Home:        chart.Metadata.Home,
+		Keywords:    chart.Metadata.Keywords,
+		Maintainers: chart.Metadata.Maintainers,
+		Name:        chart.Metadata.Name,
+		Sources:     chart.Metadata.Sources,
+		URLs:        []string{url},
+		AppVersion:  chart.Metadata.AppVersion,
+		Version:     chart.Metadata.Version,
+	}
+
+	fmt.Println(chartDetails)
+
+	version := &repo.ChartVersion{
+		Metadata: chart.Metadata,
+		URLs:     []string{url},
+		Created:  time.Now(),
+	}
+
+	if index.Entries[chart.Metadata.Name] == nil {
+		index.Entries[chart.Metadata.Name] = repo.ChartVersions{}
+	}
+
+	index.Entries[chart.Metadata.Name] = append(index.Entries[chart.Metadata.Name], version)
+	log.Printf("Added chart %s version %s to index", chart.Metadata.Name, chart.Metadata.Version)
+	return nil
 }
