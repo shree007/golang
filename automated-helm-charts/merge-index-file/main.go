@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // https://zhwt.github.io/yaml-to-go/
@@ -54,5 +58,22 @@ type Maintainer struct {
 }
 
 func main() {
-	fmt.Println("Read yaml file...")
+	var jfrogIndex HelmIndex
+	err := loadYAML("indexfile-generated-by-helm-sdk.yaml", &jfrogIndex)
+	if err != nil {
+		log.Fatalf("Error loading yaml file %v", err)
+	}
+	fmt.Println(jfrogIndex)
+}
+
+func loadYAML(filePath string, data interface{}) error {
+	fileContent, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(fileContent, data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
