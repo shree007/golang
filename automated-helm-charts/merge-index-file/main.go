@@ -34,6 +34,7 @@ type ChartEntry struct {
 }
 
 type ChartMetadata struct {
+	APIVersion   string                 `yaml:"apiversion"`
 	Name         string                 `yaml:"name"`
 	Home         string                 `yaml:"home"`
 	Sources      []string               `yaml:"sources"`
@@ -42,7 +43,6 @@ type ChartMetadata struct {
 	Keywords     []string               `yaml:"keywords"`
 	Maintainers  []Maintainer           `yaml:"maintainers"`
 	Icon         string                 `yaml:"icon"`
-	APIVersion   string                 `yaml:"apiversion"`
 	Condition    string                 `yaml:"condition"`
 	Tags         string                 `yaml:"tags"`
 	AppVersion   string                 `yaml:"appversion"`
@@ -66,23 +66,18 @@ type ExpectedIndexFile struct {
 }
 
 type ExpectedChartEntry struct {
-	ApiVersion  string               `yaml:"apiVersion"`
-	Created     string               `yaml:"created"`
-	Description string               `yaml:"description"`
-	Digest      string               `yaml:"digest"`
-	Home        string               `yaml:"home"`
-	Keywords    []string             `yaml:"keywords"`
-	Maintainers []ExpectedMaintainer `yaml:"maintainers"`
-	Name        string               `yaml:"name"`
-	Sources     []string             `yaml:"sources"`
-	Urls        []string             `yaml:"urls"`
-	AppVersion  string               `yaml:"appVersion"`
-	Version     string               `yaml:"version"`
-}
-
-type ExpectedMaintainer struct {
-	Name  string `yaml:"name"`
-	Email string `yaml:"email"`
+	ApiVersion  string       `yaml:"apiVersion"`
+	Created     time.Time    `yaml:"created"`
+	Description string       `yaml:"description"`
+	Digest      string       `yaml:"digest"`
+	Home        string       `yaml:"home"`
+	Keywords    []string     `yaml:"keywords"`
+	Maintainers []Maintainer `yaml:"maintainers"`
+	Name        string       `yaml:"name"`
+	Sources     []string     `yaml:"sources"`
+	Urls        []string     `yaml:"urls"`
+	AppVersion  string       `yaml:"appVersion"`
+	Version     string       `yaml:"version"`
 }
 
 func main() {
@@ -106,25 +101,25 @@ func loadYAML(filePath string, data interface{}) error {
 	return nil
 }
 
-// appVersion: v0.12.0
-// version: 4.11.0
 func buildExpectedchartEntry(jfrogIndex HelmIndex) {
-	// First I can print all those needed data
 	for entryName, Charts := range jfrogIndex.Entries {
-		fmt.Println("Chart Entry Name", entryName)
+		fmt.Println("Chart Entry Name:", entryName)
 		for _, chart := range Charts {
-			fmt.Println("apiVersion: ", chart.Metadata.APIVersion)
-			fmt.Println("created: ", chart.Created)
-			fmt.Println("description: ", chart.Metadata.Description)
-			fmt.Println("digest: ", chart.Digest)
-			fmt.Println("home: ", chart.Metadata.Home)
-			fmt.Println("keywords", chart.Metadata.Keywords)
-			fmt.Println("maintainers", chart.Metadata.Maintainers)
-			fmt.Println("sources", chart.Metadata.Sources)
-			fmt.Println("urls", chart.URLs)
-			fmt.Println("appVersion", chart.Metadata.AppVersion)
-			fmt.Println("version", chart.Metadata.Version)
+			expected_chart_entry := ExpectedChartEntry{
+				ApiVersion:  chart.Metadata.APIVersion,
+				Name:        chart.Metadata.Name,
+				Created:     chart.Created,
+				Description: chart.Metadata.Description,
+				Digest:      chart.Digest,
+				Home:        chart.Metadata.Home,
+				Keywords:    chart.Metadata.Keywords,
+				Maintainers: chart.Metadata.Maintainers,
+				Sources:     chart.Metadata.Sources,
+				Urls:        chart.URLs,
+				AppVersion:  chart.Metadata.AppVersion,
+				Version:     chart.Metadata.Version,
+			}
+			fmt.Printf("Expected Chart Entry:\n%+v\n\n", expected_chart_entry)
 		}
 	}
-
 }
