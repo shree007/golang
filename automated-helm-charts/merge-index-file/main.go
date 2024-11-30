@@ -120,6 +120,19 @@ func buildExpectedchartEntry(jfrogIndex HelmIndex) {
 				Version:     chart.Metadata.Version,
 			}
 			fmt.Printf("Expected Chart Entry:\n%+v\n\n", expected_chart_entry)
+			saveToYaml("temp-expected-index.yaml", &expected_chart_entry)
 		}
+	}
+}
+
+func saveToYaml(filepath string, data interface{}) {
+	fileContent, err := yaml.Marshal(data)
+	if err != nil {
+		log.Fatalf("Error while performing marshal %v", err)
+	}
+	err = os.WriteFile(filepath, fileContent, 0644)
+	if err != nil {
+		log.Fatalf("Error writing to file %s: %v", filepath, err)
+
 	}
 }
