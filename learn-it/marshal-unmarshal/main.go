@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -29,4 +30,11 @@ func main() {
 		log.Fatalf("error while marshalling to yaml %v", err)
 	}
 	fmt.Println("YAML converted data is:", string(data))
+
+	err = os.WriteFile("person.yaml", data, 0644)
+	if err != nil {
+		log.Fatalf("Problem while writing into file %v", err)
+	}
+	fmt.Println("Data has been written into person.yaml file")
+
 }
