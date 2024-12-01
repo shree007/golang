@@ -20,10 +20,10 @@ type Person struct {
 }
 
 func main() {
-	marshal()
-	unmashal()
+	marshalYaml()
+	unmashalToYaml()
 }
-func marshal() {
+func marshalYaml() {
 	fmt.Println("==========Marshal person struct==========")
 	person := Person{
 		Name:    "shreeprakash",
@@ -43,7 +43,7 @@ func marshal() {
 	fmt.Println("Data has been written into person.yaml file")
 }
 
-func unmashal() {
+func unmashalToYaml() {
 	fmt.Println("==========Unmarshal person.yaml==========")
 	readData, err := os.ReadFile("person.yaml")
 	if err != nil {
