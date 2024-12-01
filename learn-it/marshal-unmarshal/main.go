@@ -20,6 +20,11 @@ type Person struct {
 }
 
 func main() {
+	marshal()
+	unmashal()
+}
+func marshal() {
+	fmt.Println("==========Marshal person struct==========")
 	person := Person{
 		Name:    "shreeprakash",
 		Age:     32,
@@ -36,5 +41,18 @@ func main() {
 		log.Fatalf("Problem while writing into file %v", err)
 	}
 	fmt.Println("Data has been written into person.yaml file")
+}
 
+func unmashal() {
+	fmt.Println("==========Unmarshal person.yaml==========")
+	readData, err := os.ReadFile("person.yaml")
+	if err != nil {
+		log.Fatalf("error while reading person.yaml file %v", err)
+	}
+	var person Person
+	err = yaml.Unmarshal(readData, &person)
+	if err != nil {
+		log.Errorf("Error while marshalling data to struct %v", err)
+	}
+	fmt.Println("UnMarshalled struct: %v\n", person)
 }
