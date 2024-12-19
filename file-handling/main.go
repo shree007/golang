@@ -3,11 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 )
 
 func main() {
+
+	log.Info("<<<<<<<<< OPEN READING FILEs>>>>>>>>>")
 	fileName := "read-file.txt"
 	fmt.Println("Reading file content as a string")
 	readEntireFileAsStringContent(fileName)
@@ -17,6 +19,9 @@ func main() {
 
 	fmt.Println("Read file by chunks")
 	readFileByChunks(fileName)
+	log.Info("<<<<<<<<< CLOSE READING FILEs>>>>>>>>>")
+
+	
 }
 
 func readFileByChunks(fileName string) {
