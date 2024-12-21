@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -17,6 +17,64 @@ func main() {
 
 	fmt.Println("Read file by chunks")
 	readFileByChunks(fileName)
+	log.Info("<<<<<<<<< CLOSE READING FILEs>>>>>>>>>")
+
+	log.Info("<<<<<<<<<< OPEN WRITING FILEs>>>>>>>>>")
+
+	writeIntoFileCompleteContent()
+	writeIntoFileAppend()
+	writeIntoFileAppendUsing()
+
+}
+
+func writeIntoFileAppendUsing() {
+	fileName := "write-file-complete-content.txt"
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open file: %v", err)
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	_, err = writer.WriteString("Appending new content using bufio.Writer.\n")
+	if err != nil {
+		log.Fatalf("Failed to write buffered content: %v", err)
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		log.Fatalf("Failed to flush buffer: %v", err)
+	}
+
+	log.Println("Buffered data appended successfully!")
+}
+
+func writeIntoFileAppend() {
+	fileName := "write-file-complete-content.txt"
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open file: %v", err)
+	}
+	defer file.Close()
+	_, err = file.Write([]byte("\n Appending new content using Write.\n"))
+	if err != nil {
+		log.Fatalf("Failed to write to file: %v", err)
+	}
+	log.Println("Data appended successfully")
+}
+
+func writeIntoFileCompleteContent() {
+	content := []byte("Hello Blr, Hello Delhi, Hello Mumbai")
+	fileName := "write-file-complete-content.txt"
+
+	err := os.WriteFile(fileName, content, 0644)
+
+	if err != nil {
+		log.Fatalf("writing into file is failed %v", err)
+	}
+
+	fmt.Println("File has been written successfully")
+
 }
 
 func readFileByChunks(fileName string) {

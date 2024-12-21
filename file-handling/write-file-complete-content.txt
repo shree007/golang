@@ -1,0 +1,3 @@
+Hello Blr, Hello Delhi, Hello Mumbai
+ Appending new content using Write.
+Appending new content using bufio.Writer.
