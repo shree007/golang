@@ -4,13 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
-
-	log.Info("<<<<<<<<< OPEN READING FILEs>>>>>>>>>")
 	fileName := "read-file.txt"
 	fmt.Println("Reading file content as a string")
 	readEntireFileAsStringContent(fileName)
