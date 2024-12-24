@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"fmt"
 	"os"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,7 +26,37 @@ func main() {
 	writeIntoFileCompleteContent()
 	writeIntoFileAppend()
 	writeIntoFileAppendUsing()
+	writeIntoCsv()
 
+	log.Info("<<<<<<<<<< CLOSE WRITING FILEs>>>>>>>>>")
+
+}
+
+func writeIntoCsv() {
+	file, err := os.Create("write-into-me.csv")
+	if err != nil {
+		log.Fatalf("Failed to create file %v", err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+
+	defer writer.Flush()
+
+	data := [][]string{
+		{"Name", "Age", "Country"},
+		{"Alice", "30", "USA"},
+		{"Bob", "25", "Canada"},
+		{"Charlie", "35", "UK"},
+	}
+
+	for _, row := range data {
+		if err := writer.Write(row); err != nil {
+			log.Fatalf("Failed to write row to CSV: %v", err)
+		}
+	}
+
+	log.Println("CSV file written successfully!")
 }
 
 func writeIntoFileAppendUsing() {
