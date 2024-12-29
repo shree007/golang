@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -9,57 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// https://zhwt.github.io/yaml-to-go/
-
-// Struct for Input helm sdk generated
-type HelmIndex struct {
-	ServerInfo  interface{}             `yaml:"serverinfo"`
-	APIVersion  string                  `yaml:"apiversion"`
-	Generated   time.Time               `yaml:"generated"`
-	Entries     map[string][]ChartEntry `yaml:"entries"`
-	PublicKeys  []interface{}           `yaml:"publickeys"`
-	Annotations map[string]interface{}  `yaml:"annotations"`
-}
-
-type ChartEntry struct {
-	Metadata               ChartMetadata `yaml:"metadata"`
-	URLs                   []string      `yaml:"urls"`
-	Created                time.Time     `yaml:"created"`
-	Removed                bool          `yaml:"removed"`
-	Digest                 string        `yaml:"digest"`
-	ChecksumDeprecate      string        `yaml:"checksumdeprecated"`
-	EngineDeprecate        string        `yaml:"enginedeprecated"`
-	TillerVersionDeprecate string        `yaml:"tillerversiondeprecated"`
-	URLDeprecate           string        `yaml:"urldeprecated"`
-}
-
-type ChartMetadata struct {
-	APIVersion   string                 `yaml:"apiversion"`
-	Name         string                 `yaml:"name"`
-	Home         string                 `yaml:"home"`
-	Sources      []string               `yaml:"sources"`
-	Version      string                 `yaml:"version"`
-	Description  string                 `yaml:"description"`
-	Keywords     []string               `yaml:"keywords"`
-	Maintainers  []Maintainer           `yaml:"maintainers"`
-	Icon         string                 `yaml:"icon"`
-	Condition    string                 `yaml:"condition"`
-	Tags         string                 `yaml:"tags"`
-	AppVersion   string                 `yaml:"appversion"`
-	Deprecated   bool                   `yaml:"deprecated"`
-	Annotations  map[string]interface{} `yaml:"annotations"`
-	KubeVersion  string                 `yaml:"kubeversion"`
-	Dependencies []string               `yaml:"dependencies"`
-	Type         string                 `yaml:"type"`
-}
-
-type Maintainer struct {
-	Name  string `yaml:"name"`
-	Email string `yaml:"email"`
-	URL   string `yaml:"url"`
-}
-
-// Expected struct
 type ExpectedIndexFile struct {
 	Generated string                          `yaml:"generated"`
 	Entries   map[string][]ExpectedChartEntry `yaml:"entries"`
@@ -80,13 +28,50 @@ type ExpectedChartEntry struct {
 	Version     string       `yaml:"version"`
 }
 
+type Maintainer struct {
+	Name  string `yaml:"name"`
+	Email string `yaml:"email"`
+	URL   string `yaml:"url"`
+}
+
+type HelmIndex struct {
+	Entries map[string][]ChartEntry `yaml:"entries"`
+}
+
+type ChartEntry struct {
+	Metadata  ChartMetadata `yaml:"metadata"`
+	URLs      []string      `yaml:"urls"`
+	Created   time.Time     `yaml:"created"`
+	Digest    string        `yaml:"digest"`
+	Removed   bool          `yaml:"removed"`
+	Checksum  string        `yaml:"checksumdeprecated"`
+	TillerVer string        `yaml:"tillerversiondeprecated"`
+}
+
+type ChartMetadata struct {
+	APIVersion  string       `yaml:"apiversion"`
+	Name        string       `yaml:"name"`
+	Home        string       `yaml:"home"`
+	Sources     []string     `yaml:"sources"`
+	Version     string       `yaml:"version"`
+	Description string       `yaml:"description"`
+	Keywords    []string     `yaml:"keywords"`
+	Maintainers []Maintainer `yaml:"maintainers"`
+	AppVersion  string       `yaml:"appversion"`
+}
+
 func main() {
 	var jfrogIndex HelmIndex
 	err := loadYAML("indexfile-generated-by-helm-sdk.yaml", &jfrogIndex)
 	if err != nil {
-		log.Fatalf("Error loading yaml file %v", err)
+		log.Fatalf("Error loading YAML file: %v", err)
 	}
-	buildExpectedchartEntry(jfrogIndex)
+
+	expectedIndex := buildExpectedIndex(jfrogIndex)
+	err = saveToYAML("final-expected-index.yaml", expectedIndex)
+	if err != nil {
+		log.Fatalf("Error saving to YAML: %v", err)
+	}
 }
 
 func loadYAML(filePath string, data interface{}) error {
@@ -94,18 +79,18 @@ func loadYAML(filePath string, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(fileContent, data)
-	if err != nil {
-		return err
-	}
-	return nil
+	return yaml.Unmarshal(fileContent, data)
 }
 
-func buildExpectedchartEntry(jfrogIndex HelmIndex) {
-	for entryName, Charts := range jfrogIndex.Entries {
-		fmt.Println("Chart Entry Name:", entryName)
-		for _, chart := range Charts {
-			expected_chart_entry := ExpectedChartEntry{
+func buildExpectedIndex(jfrogIndex HelmIndex) ExpectedIndexFile {
+	expectedIndex := ExpectedIndexFile{
+		Generated: time.Now().Format(time.RFC3339),
+		Entries:   make(map[string][]ExpectedChartEntry),
+	}
+
+	for entryName, charts := range jfrogIndex.Entries {
+		for _, chart := range charts {
+			expectedChart := ExpectedChartEntry{
 				ApiVersion:  chart.Metadata.APIVersion,
 				Name:        chart.Metadata.Name,
 				Created:     chart.Created,
@@ -119,20 +104,16 @@ func buildExpectedchartEntry(jfrogIndex HelmIndex) {
 				AppVersion:  chart.Metadata.AppVersion,
 				Version:     chart.Metadata.Version,
 			}
-			fmt.Printf("Expected Chart Entry:\n%+v\n\n", expected_chart_entry)
-			saveToYaml("temp-expected-index.yaml", &expected_chart_entry)
+			expectedIndex.Entries[entryName] = append(expectedIndex.Entries[entryName], expectedChart)
 		}
 	}
+	return expectedIndex
 }
 
-func saveToYaml(filepath string, data interface{}) {
+func saveToYAML(filePath string, data interface{}) error {
 	fileContent, err := yaml.Marshal(data)
 	if err != nil {
-		log.Fatalf("Error while performing marshal %v", err)
+		return err
 	}
-	err = os.WriteFile(filepath, fileContent, 0644)
-	if err != nil {
-		log.Fatalf("Error writing to file %s: %v", filepath, err)
-
-	}
+	return os.WriteFile(filePath, fileContent, 0644)
 }
