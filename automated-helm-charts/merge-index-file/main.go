@@ -3,6 +3,9 @@ package main
 import (
 	"log"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -104,7 +107,18 @@ func buildExpectedIndex(jfrogIndex HelmIndex) ExpectedIndexFile {
 				AppVersion:  chart.Metadata.AppVersion,
 				Version:     chart.Metadata.Version,
 			}
-			expectedIndex.Entries[entryName] = append(expectedIndex.Entries[entryName], expectedChart)
+			existingEntries, exists := expectedIndex.Entries[entryName]
+
+			if exists {
+				expectedIndex.Entries[entryName] = append(existingEntries, expectedChart)
+				sort.SliceStable(expectedIndex.Entries[entryName], func(i, j int) bool {
+					return compareVersions(expectedIndex.Entries[entryName][i].Version, expectedIndex.Entries[entryName][j].Version) < 0
+				})
+			} else {
+				expectedIndex.Entries[entryName] = []ExpectedChartEntry{expectedChart}
+			}
+
+			//expectedIndex.Entries[entryName] = append(expectedIndex.Entries[entryName], expectedChart)
 		}
 	}
 	return expectedIndex
@@ -116,4 +130,26 @@ func saveToYAML(filePath string, data interface{}) error {
 		return err
 	}
 	return os.WriteFile(filePath, fileContent, 0644)
+}
+
+func compareVersions(version1, version2 string) int {
+	v1Parts := strings.Split(version1, ".")
+	v2Parts := strings.Split(version2, ".")
+
+	for i := 0; i < len(v1Parts) || i < len(v2Parts); i++ {
+		var v1Part, v2Part int
+		if i < len(v1Parts) {
+			v1Part, _ = strconv.Atoi(v1Parts[i])
+		}
+		if i < len(v2Parts) {
+			v2Part, _ = strconv.Atoi(v2Parts[i])
+		}
+
+		if v1Part < v2Part {
+			return -1
+		} else if v1Part > v2Part {
+			return 1
+		}
+	}
+	return 0
 }

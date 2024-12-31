@@ -1,4 +1,4 @@
-generated: "2024-12-29T22:37:56+05:30"
+generated: "2024-12-31T16:54:45+05:30"
 entries:
     prometheus-adapter:
         - apiVersion: v1
@@ -26,6 +26,6 @@ entries:
             - https://github.com/kubernetes/charts
             - https://github.com/kubernetes-sigs/prometheus-adapter
           urls:
-            - temp-helm-storage/prometheus-adapter-4.11.1.tgz
+            - temp-helm-storage/prometheus-adapter-4.11.2.tgz
           appVersion: v0.12.0
-          version: 4.11.1
+          version: 4.11.2
