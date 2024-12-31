@@ -64,14 +64,25 @@ type ChartMetadata struct {
 }
 
 func main() {
+	var finalIndex ExpectedIndexFile
+	err := loadYAML("final-expected-index.yaml", &finalIndex)
+	if err != nil {
+		log.Printf("final-expected-index.yaml not found or failed to load: %v", err)
+		finalIndex = ExpectedIndexFile{
+			Generated: time.Now().Format(time.RFC3339),
+			Entries:   make(map[string][]ExpectedChartEntry),
+		}
+	}
+
 	var jfrogIndex HelmIndex
-	err := loadYAML("indexfile-generated-by-helm-sdk.yaml", &jfrogIndex)
+	err = loadYAML("indexfile-generated-by-helm-sdk.yaml", &jfrogIndex)
 	if err != nil {
 		log.Fatalf("Error loading YAML file: %v", err)
 	}
 
-	expectedIndex := buildExpectedIndex(jfrogIndex)
-	err = saveToYAML("final-expected-index.yaml", expectedIndex)
+	mergeIndexes(&finalIndex, jfrogIndex)
+
+	err = saveToYAML("final-expected-index.yaml", finalIndex)
 	if err != nil {
 		log.Fatalf("Error saving to YAML: %v", err)
 	}
@@ -85,12 +96,15 @@ func loadYAML(filePath string, data interface{}) error {
 	return yaml.Unmarshal(fileContent, data)
 }
 
-func buildExpectedIndex(jfrogIndex HelmIndex) ExpectedIndexFile {
-	expectedIndex := ExpectedIndexFile{
-		Generated: time.Now().Format(time.RFC3339),
-		Entries:   make(map[string][]ExpectedChartEntry),
+func saveToYAML(filePath string, data interface{}) error {
+	fileContent, err := yaml.Marshal(data)
+	if err != nil {
+		return err
 	}
+	return os.WriteFile(filePath, fileContent, 0644)
+}
 
+func mergeIndexes(finalIndex *ExpectedIndexFile, jfrogIndex HelmIndex) {
 	for entryName, charts := range jfrogIndex.Entries {
 		for _, chart := range charts {
 			expectedChart := ExpectedChartEntry{
@@ -107,29 +121,28 @@ func buildExpectedIndex(jfrogIndex HelmIndex) ExpectedIndexFile {
 				AppVersion:  chart.Metadata.AppVersion,
 				Version:     chart.Metadata.Version,
 			}
-			existingEntries, exists := expectedIndex.Entries[entryName]
 
-			if exists {
-				expectedIndex.Entries[entryName] = append(existingEntries, expectedChart)
-				sort.SliceStable(expectedIndex.Entries[entryName], func(i, j int) bool {
-					return compareVersions(expectedIndex.Entries[entryName][i].Version, expectedIndex.Entries[entryName][j].Version) < 0
-				})
-			} else {
-				expectedIndex.Entries[entryName] = []ExpectedChartEntry{expectedChart}
+			existingEntries := finalIndex.Entries[entryName]
+			isVersionExists := false
+
+			for _, existingChart := range existingEntries {
+				if existingChart.Version == expectedChart.Version {
+					isVersionExists = true
+					break
+				}
 			}
 
-			//expectedIndex.Entries[entryName] = append(expectedIndex.Entries[entryName], expectedChart)
+			if !isVersionExists {
+				finalIndex.Entries[entryName] = append(finalIndex.Entries[entryName], expectedChart)
+			}
+
+			sort.SliceStable(finalIndex.Entries[entryName], func(i, j int) bool {
+				return compareVersions(finalIndex.Entries[entryName][i].Version, finalIndex.Entries[entryName][j].Version) < 0
+			})
 		}
 	}
-	return expectedIndex
-}
 
-func saveToYAML(filePath string, data interface{}) error {
-	fileContent, err := yaml.Marshal(data)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(filePath, fileContent, 0644)
+	finalIndex.Generated = time.Now().Format(time.RFC3339)
 }
 
 func compareVersions(version1, version2 string) int {

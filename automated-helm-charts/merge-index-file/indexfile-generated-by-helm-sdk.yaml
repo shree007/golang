@@ -2,14 +2,14 @@ serverinfo: {}
 apiversion: v1
 generated: 2024-11-10T18:15:27.081944718Z
 entries:
-    prometheus-adapter:
+    prometheus-operator:
         - metadata:
             name: prometheus-adapter
             home: https://github.com/kubernetes-sigs/prometheus-adapter
             sources:
                 - https://github.com/kubernetes/charts
                 - https://github.com/kubernetes-sigs/prometheus-adapter
-            version: 4.11.2
+            version: 4.11.1
             description: A Helm chart for k8s prometheus adapter
             keywords:
                 - hpa
