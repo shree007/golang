@@ -10,6 +10,21 @@ import (
 func main() {
 	hashToString()
 	hashFile()
+	comparingHash()
+}
+
+func comparingHash() {
+	data1 := "hello"
+	data2 := "world"
+
+	hash1 := sha256.Sum256([]byte(data1))
+	hash2 := sha256.Sum256([]byte(data2))
+
+	if hash1 == hash2 {
+		fmt.Println("Hashes matched")
+	} else {
+		fmt.Println("Hashes unmatched")
+	}
 }
 
 func hashFile() {
