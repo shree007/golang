@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 )
 
@@ -14,6 +15,45 @@ func main() {
 	getExtention(path)
 	detectAbsolutePath(path)
 	walkIntoDirectory()
+	cleanThePath()
+	createDir()
+	createNestedDir()
+	removeDir()
+	removeNestedDir()
+}
+
+func removeNestedDir() {
+	err := os.RemoveAll("parent")
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+}
+
+func removeDir() {
+	err := os.Remove("newdir")
+	if err != nil {
+		fmt.Println("Error: ", err)
+	}
+}
+
+func createNestedDir() {
+	err := os.MkdirAll("parent/child", 0755)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func createDir() {
+	err := os.Mkdir("newdir", 0755)
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+}
+
+func cleanThePath() {
+	path := "dir1/dir2/../../filename.txt"
+	fmt.Println("original path: ", path)
+	fmt.Println("Clean up ", filepath.Clean(path))
 }
 
 func walkIntoDirectory() {
@@ -27,7 +67,6 @@ func walkIntoDirectory() {
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
- }
 }
 
 func detectAbsolutePath(path string) {
