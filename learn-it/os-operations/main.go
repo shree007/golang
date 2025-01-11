@@ -20,6 +20,12 @@ func main() {
 	createNestedDir()
 	removeDir()
 	removeNestedDir()
+	getEnv()
+}
+
+func getEnv() {
+	value := os.Getenv("USER")
+	fmt.Println(value)
 }
 
 func removeNestedDir() {
