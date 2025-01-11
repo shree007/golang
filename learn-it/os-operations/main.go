@@ -27,6 +27,7 @@ func walkIntoDirectory() {
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
+ }
 }
 
 func detectAbsolutePath(path string) {
