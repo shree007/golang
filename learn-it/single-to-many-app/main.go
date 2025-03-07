@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 )
 
@@ -22,6 +23,13 @@ func main() {
 }
 
 func startServer(name, port string) {
-	fmt.Println("name: ", name)
-	fmt.Println("port: ", port)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "Hello from %s running on port %s \n", name, port)
+	})
+
+	fmt.Printf("%s is running on port...\n", name, port)
+	err := http.ListenAndServe(":"+port, nil)
+	if err != nil {
+		fmt.Println("Error starting server:", err)
+	}
 }
