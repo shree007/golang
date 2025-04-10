@@ -1,19 +1,16 @@
 package main
 
-
-import(
+import (
 	"fmt"
 	"log"
 	//"log/slog" available: 1.21 version, Learning curve https://betterstack.com/community/guides/logging/logging-in-go/
 )
 
-func awsCreateEcrRepository(){
+func awsCreateEcrRepository() {
 	log.Printf("hello, world")
 }
 
-
-
-func main(){
+func main() {
 	fmt.Println("create docker repository")
 	awsCreateEcrRepository()
 }
